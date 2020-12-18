@@ -22,6 +22,7 @@ import android.content.SharedPreferences
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -29,6 +30,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
+import com.robotemi.sdk.Robot
+import com.robotemi.sdk.listeners.OnRobotReadyListener
 import com.vrem.annotation.OpenClass
 import com.vrem.util.EMPTY
 import com.vrem.util.createContext
@@ -44,7 +47,7 @@ import com.vrem.wifianalyzer.wifi.accesspoint.ConnectionView
 import com.vrem.wifianalyzer.wifi.band.WiFiBand
 
 @OpenClass
-class MainActivity : AppCompatActivity(), NavigationMenuControl, OnSharedPreferenceChangeListener {
+class MainActivity : AppCompatActivity(), NavigationMenuControl, OnSharedPreferenceChangeListener, OnRobotReadyListener {
     lateinit var drawerNavigation: DrawerNavigation
     lateinit var mainReload: MainReload
     lateinit var navigationMenuController: NavigationMenuController
@@ -52,6 +55,11 @@ class MainActivity : AppCompatActivity(), NavigationMenuControl, OnSharedPrefere
     lateinit var permissionService: PermissionService
 
     private var currentCountryCode: String = String.EMPTY
+
+    companion object {
+        private val TAG = MainActivity::class.java.simpleName
+        private var sRobot: Robot? = null
+    }
 
     override fun attachBaseContext(newBase: Context) =
             super.attachBaseContext(newBase.createContext(Settings(Repository(newBase)).languageLocale()))
@@ -89,6 +97,9 @@ class MainActivity : AppCompatActivity(), NavigationMenuControl, OnSharedPrefere
 
         permissionService = PermissionService(this)
         permissionService.check()
+
+        // Initialize robot instance
+        sRobot = Robot.getInstance()
     }
 
     public override fun onPostCreate(savedInstanceState: Bundle?) {
@@ -188,9 +199,19 @@ class MainActivity : AppCompatActivity(), NavigationMenuControl, OnSharedPrefere
         updateActionBar()
     }
 
+    public override fun onStart() {
+        super.onStart()
+
+        // Add robot event listeners
+        sRobot!!.addOnRobotReadyListener(this)
+    }
+
     public override fun onStop() {
         MainContext.INSTANCE.scannerService.stop()
         super.onStop()
+
+        // Remove robot event listeners
+        sRobot!!.removeOnRobotReadyListener(this)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -203,6 +224,13 @@ class MainActivity : AppCompatActivity(), NavigationMenuControl, OnSharedPrefere
         optionMenu.select(item)
         updateActionBar()
         return true
+    }
+
+    override fun onRobotReady(isReady: Boolean) {
+        if (isReady) {
+            Log.i(TAG, "Robot is ready")
+            sRobot!!.hideTopBar() // hide temi's top action bar when skill is active
+        }
     }
 
     fun updateActionBar() = currentNavigationMenu().activateOptions(this)
