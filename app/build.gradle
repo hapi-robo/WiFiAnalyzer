@@ -36,6 +36,8 @@ dependencies {
     implementation 'androidx.media:media:1.2.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation 'com.jjoe64:graphview:4.2.2'
+    // temi SDK
+    implementation 'com.robotemi:sdk:0.10.73'
     // Unit Test Dependencies
     testImplementation 'junit:junit:4.13.1'
     testImplementation 'org.mockito:mockito-core:3.6.0'
@@ -61,7 +63,7 @@ android {
 
     defaultConfig {
         applicationId "com.vrem.wifianalyzer"
-        minSdkVersion 19
+        minSdkVersion 22
         targetSdkVersion 30
         versionCode
         versionName
